@@ -2,32 +2,27 @@ import 'package:flutter/material.dart';
 
 enum Department { finance, law, it, medical }
 
-const departmentIcons = {
-  Department.finance: Icons.attach_money,
-  Department.law: Icons.gavel,
-  Department.it: Icons.computer,
-  Department.medical: Icons.local_hospital,
-};
-
 enum Gender { male, female }
 
-const genderColor = {
+final Map<Department, String> icons = {
+  Department.finance: "finance.png",
+  Department.law: "law.png",
+  Department.it: "it.png",
+  Department.medical: "medicine.png",
+};
+
+final Map<Gender, Color> GenderColor = {
   Gender.male: Colors.blue,
   Gender.female: Colors.pink,
 };
 
-class StudentsModel {
-  StudentsModel({
-    required this.firstName,
-    required this.lastName,
-    required this.grade,
-    required this.department,
-    required this.gender,
-  });
+class Student {
+  String firstName;
+  String lastName;
+  Gender gender;
+  int grade;
+  Department department;
 
-  final String firstName;
-  final String lastName;
-  final int grade;
-  final Department department;
-  final Gender gender;
+  Student(
+      this.firstName, this.lastName, this.gender, this.grade, this.department);
 }
