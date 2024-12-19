@@ -1,41 +1,84 @@
 import 'package:flutter/material.dart';
-import 'package:mashtaliar_s_kiuki_21_8/widgets/createStudent.dart';
-import 'package:mashtaliar_s_kiuki_21_8/widgets/students.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'screens/departments_screen.dart';
+import 'screens/students_screen.dart';
 
 void main() {
-  runApp(MainApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MainApp extends StatefulWidget {
-  @override
-  _MainAppState createState() => _MainAppState();
-}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-class _MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: AppScaffold());
+    return MaterialApp(
+      title: 'University App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        textTheme: GoogleFonts.latoTextTheme().copyWith(
+          titleLarge: GoogleFonts.lato(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          bodyMedium: GoogleFonts.lato(
+            fontSize: 14,
+          ),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.blue.shade800,
+          foregroundColor: Colors.white,
+          titleTextStyle: GoogleFonts.lato(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.blue.shade800,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      home: const TabsScreen(),
+    );
   }
 }
 
-class AppScaffold extends StatelessWidget {
-  final _studentListViewKey = GlobalKey<StudentListViewState>();
+class TabsScreen extends StatefulWidget {
+  const TabsScreen({super.key});
 
+  @override
+  State<TabsScreen> createState() => _TabsScreenState();
+}
+
+class _TabsScreenState extends State<TabsScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    const DepartmentsScreen(),
+    const StudentsScreen(),
+  ];
+
+  final List<String> _titles = ['Departments', 'Students'];
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Students'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              showNewStudent(
-                  context, _studentListViewKey.currentState?.addStudent, null);
-            },
-            child: const Icon(Icons.add, size: 40),
-          ),
+      appBar: AppBar(title: Text(_titles[_selectedIndex])),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Departments'),
+          BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Students'),
         ],
       ),
-      body: StudentListView(key: _studentListViewKey),
     );
   }
 }
