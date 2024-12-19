@@ -32,7 +32,7 @@ class DepartmentsScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(department.icon, width: 50, height: 50), // Использование иконки из assets
+                Image.asset(department.icon, width: 50, height: 50),
                 const SizedBox(height: 10),
                 Text(
                   department.name,
