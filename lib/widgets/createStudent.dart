@@ -1,150 +1,150 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:mashtaliar_s_kiuki_21_8/models/student.dart';
-import 'package:mashtaliar_s_kiuki_21_8/widgets/students.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/student.dart';
+import '../providers/departments_provider.dart';
+import '../models/Department.dart';
 
-class NewStudent extends StatefulWidget {
-  final void Function(Student)? onStudentAdded;
-  final int? studentIndex;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/student.dart';
+import '../providers/departments_provider.dart';
+import '../models/Department.dart';
 
-  NewStudent({required this.onStudentAdded, this.studentIndex});
+class NewStudent extends ConsumerStatefulWidget {
+  final Function(Student) onSave;
+  final Student? student;
+
+  const NewStudent({Key? key, required this.onSave, this.student})
+      : super(key: key);
 
   @override
-  NewStudentState createState() => NewStudentState();
+  _NewStudentState createState() => _NewStudentState();
 }
 
-class NewStudentState extends State<NewStudent> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _gradeController = TextEditingController();
-
-  Department? department = Department.finance;
-  Gender? gender = Gender.male;
+class _NewStudentState extends ConsumerState<NewStudent> {
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late Department _selectedDepartment;
+  late Gender _selectedGender;
+  int _selectedGrade = 1;
 
   @override
   void initState() {
     super.initState();
-    if (widget.studentIndex != null) {
-      _firstNameController.text =
-          StudentListViewState.students[widget.studentIndex!].firstName;
-      _lastNameController.text =
-          StudentListViewState.students[widget.studentIndex!].lastName;
-      _gradeController.text =
-          StudentListViewState.students[widget.studentIndex!].grade.toString();
-      department =
-          StudentListViewState.students[widget.studentIndex!].department;
-      gender = StudentListViewState.students[widget.studentIndex!].gender;
+    _firstNameController = TextEditingController(text: widget.student?.firstName ?? '');
+    _lastNameController = TextEditingController(text: widget.student?.lastName ?? '');
+    final defaultDepartments = ref.read(departmentsProvider);
+    _selectedDepartment = widget.student?.department ?? defaultDepartments.first;
+    _selectedGender = widget.student?.gender ?? Gender.male;
+    _selectedGrade = widget.student?.grade ?? 1;
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
+  }
+
+  void _saveStudent() {
+    if (_firstNameController.text.isEmpty || _lastNameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
     }
+
+    final newStudent = Student(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      department: _selectedDepartment,
+      grade: _selectedGrade,
+      gender: _selectedGender,
+    );
+
+    widget.onSave(newStudent);
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10), color: Colors.white),
+    final departments = ref.watch(departmentsProvider);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: _firstNameController,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(labelText: "Ім'я"),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^[a-zA-Z\s]*$')),
-              ],
+              decoration: const InputDecoration(labelText: 'First Name'),
             ),
             TextField(
               controller: _lastNameController,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(labelText: "Прізвище"),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^[a-zA-Z\s]*$')),
-              ],
-            ),
-            TextField(
-              controller: _gradeController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^[1-9]$'))
-              ],
-              decoration: const InputDecoration(
-                labelText: "Оцінка",
-              ),
+              decoration: const InputDecoration(labelText: 'Last Name'),
             ),
             DropdownButton<Department>(
-              value: department,
-              items: Department.values.map((department) {
+              value: _selectedDepartment,
+              items: departments.map((dept) {
                 return DropdownMenuItem(
-                  value: department,
-                  child: Text(department.toString().split('.').last),
+                  value: dept,
+                  child: Row(
+                    children: [
+                      Image.asset(dept.icon, width: 24, height: 24),
+                      const SizedBox(width: 8),
+                      Text(dept.name),
+                    ],
+                  ),
                 );
               }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  department = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _selectedDepartment = value!),
             ),
             DropdownButton<Gender>(
-              value: gender,
+              value: _selectedGender,
               items: Gender.values.map((gender) {
                 return DropdownMenuItem(
                   value: gender,
-                  child: Text(gender.toString().split('.').last),
+                  child: Text(gender == Gender.male ? 'Male' : 'Female'),
                 );
               }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  gender = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _selectedGender = value!),
             ),
+            const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    final newStudent = Student(
-                        _firstNameController.text,
-                        _lastNameController.text,
-                        gender!,
-                        int.parse(_gradeController.text),
-                        department!);
-
-                    if (widget.studentIndex != null) {
-                      widget.onStudentAdded!(newStudent);
-                      StudentListViewState.students
-                          .removeAt(widget.studentIndex!);
-                    } else {
-                      widget.onStudentAdded!(newStudent);
-                    }
-
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Зберегти студента"),
+                const Text('Grade:', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Slider(
+                    value: _selectedGrade.toDouble(),
+                    min: 1,
+                    max: 5,
+                    divisions: 4,
+                    label: _selectedGrade.toString(),
+                    onChanged: (value) =>
+                        setState(() => _selectedGrade = value.toInt()),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Закрити"),
+                Text(
+                  _selectedGrade.toString(),
+                  style: const TextStyle(fontSize: 16),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _saveStudent,
+              child: const Text('Save'),
+            ),
           ],
-        ));
+        ),
+      ),
+    );
   }
-}
-
-void showNewStudent(BuildContext context, void Function(Student)? addStudent,
-    int? studentIndex) {
-  showModalBottomSheet(
-    context: context,
-    builder: (ctx) => NewStudent(
-      onStudentAdded: addStudent,
-      studentIndex: studentIndex,
-    ),
-  );
 }
