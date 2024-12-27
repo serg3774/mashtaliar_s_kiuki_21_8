@@ -7,12 +7,12 @@ class DepartmentItem extends StatelessWidget {
   final Color color;
 
   const DepartmentItem({
-    Key? key,
+    super.key,
     required this.name,
     required this.studentCount,
     required this.iconPath,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,36 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/student.dart';
-import '../providers/departments_provider.dart';
 import '../models/Department.dart';
+import '../providers/students_provider.dart';
 
 class NewStudent extends ConsumerStatefulWidget {
-  final Function(Student) onSave;
-  final Student? student;
+  const NewStudent({
+    super.key,
+    this.elemIndex
+  });
 
-  const NewStudent({Key? key, required this.onSave, this.student})
-      : super(key: key);
+  final int? elemIndex;
 
   @override
-  _NewStudentState createState() => _NewStudentState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _NewStudentState();
 }
 
 class _NewStudentState extends ConsumerState<NewStudent> {
-  late TextEditingController _firstNameController;
-  late TextEditingController _lastNameController;
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   late Department _selectedDepartment;
-  late Gender _selectedGender;
+  Gender _selectedGender = Gender.male;
   int _selectedGrade = 1;
 
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.student?.firstName ?? '');
-    _lastNameController = TextEditingController(text: widget.student?.lastName ?? '');
-    final defaultDepartments = ref.read(departmentsProvider);
-    _selectedDepartment = widget.student?.department ?? defaultDepartments.first;
-    _selectedGender = widget.student?.gender ?? Gender.male;
-    _selectedGrade = widget.student?.grade ?? 1;
+    _selectedDepartment = departmentsList.first;
+    if (widget.elemIndex != null) {
+      final student = ref.read(studentsProvider).students[widget.elemIndex!];
+      _firstNameController.text = student.firstName;
+      _lastNameController.text = student.lastName;
+      _selectedGrade = student.grade;
+      _selectedGender = student.gender;
+      _selectedDepartment = student.department;
+    }
   }
 
   @override
@@ -40,7 +44,7 @@ class _NewStudentState extends ConsumerState<NewStudent> {
     super.dispose();
   }
 
-  void _saveStudent() {
+  void _saveStudent() async {
     if (_firstNameController.text.isEmpty || _lastNameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill all fields')),
@@ -48,22 +52,39 @@ class _NewStudentState extends ConsumerState<NewStudent> {
       return;
     }
 
-    final newStudent = Student(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      department: _selectedDepartment,
-      grade: _selectedGrade,
-      gender: _selectedGender,
-    );
+    if (widget.elemIndex == null)  {
+      await ref.read(studentsProvider.notifier).addStudent(
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _selectedDepartment,
+            _selectedGender,
+            _selectedGrade,
+          );
+    } else {
+      await ref.read(studentsProvider.notifier).editStudent(
+            widget.elemIndex!,
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _selectedDepartment,
+            _selectedGender,
+            _selectedGrade,
+          );
+    }
 
-    widget.onSave(newStudent);
-    Navigator.pop(context);
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); 
   }
 
   @override
   Widget build(BuildContext context) {
-    final departments = ref.watch(departmentsProvider);
+    final screenState = ref.watch(studentsProvider);
 
+    if(screenState.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+    
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -85,7 +106,7 @@ class _NewStudentState extends ConsumerState<NewStudent> {
             ),
             DropdownButton<Department>(
               value: _selectedDepartment,
-              items: departments.map((dept) {
+              items: departmentsList.map((dept) {
                 return DropdownMenuItem(
                   value: dept,
                   child: Row(

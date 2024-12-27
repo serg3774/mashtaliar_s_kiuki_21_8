@@ -4,12 +4,16 @@ import '../providers/departments_provider.dart';
 import '../providers/students_provider.dart';
 
 class DepartmentsScreen extends ConsumerWidget {
-  const DepartmentsScreen({Key? key}) : super(key: key);
+  const DepartmentsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final departments = ref.watch(departmentsProvider);
-    final students = ref.watch(studentsProvider);
+    final screenState = ref.watch(studentsProvider);
+
+    if (screenState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return GridView.builder(
       padding: const EdgeInsets.all(10),
@@ -22,7 +26,7 @@ class DepartmentsScreen extends ConsumerWidget {
       itemCount: departments.length,
       itemBuilder: (context, index) {
         final department = departments[index];
-        final count = students.where((s) => s.department.id == department.id).length;
+        final count = screenState.students.where((s) => s.department.id == department.id).length;
 
         return Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

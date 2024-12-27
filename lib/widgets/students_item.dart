@@ -4,7 +4,7 @@ class StudentsItem extends StatelessWidget {
   final String firstName;
   final String lastName;
   final int grade;
-  final Color? colorName;
+  final bool isFemale;
   final String? iconPath;
 
   const StudentsItem({
@@ -12,7 +12,7 @@ class StudentsItem extends StatelessWidget {
     required this.firstName,
     required this.lastName,
     required this.grade,
-    required this.colorName,
+    required this.isFemale,
     required this.iconPath,
   });
 
@@ -20,7 +20,7 @@ class StudentsItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: colorName,
+        color: isFemale ? Colors.lightBlue : Colors.pinkAccent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(

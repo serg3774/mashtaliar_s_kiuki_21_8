@@ -7,24 +7,19 @@ import '../widgets/createStudent.dart';
 import '../models/student.dart';
 
 class StudentsScreen extends ConsumerWidget {
-  const StudentsScreen({Key? key}) : super(key: key);
+  const StudentsScreen({super.key});
 
-  void _editStudent(BuildContext context, WidgetRef ref, int index, Student student) {
+  void _editStudent(BuildContext context, WidgetRef ref, int index) {
     showModalBottomSheet(
       context: context,
-      builder: (_) => NewStudent(
-        student: student,
-        onSave: (updatedStudent) {
-          ref.read(studentsProvider.notifier).editStudent(updatedStudent, index);
-        },
-      ),
+      builder: (_) => NewStudent(elemIndex: index),
     );
   }
 
   void _deleteStudent(BuildContext context, WidgetRef ref, int index) {
-    final students = ref.read(studentsProvider);
-    final removedStudent = students[index];
-    ref.read(studentsProvider.notifier).removeStudent(index);
+    final screenState = ref.read(studentsProvider);
+    final removedStudent = screenState.students[index];
+    ref.read(studentsProvider.notifier).delete(index);
     final container = ProviderScope.containerOf(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -36,12 +31,17 @@ class StudentsScreen extends ConsumerWidget {
           },
         ),
       ),
-    );
+    ).closed.then((value) {
+      if (value != SnackBarClosedReason.action) {
+        ref.read(studentsProvider.notifier).remove();
+      }
+    });
+
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final students = ref.watch(studentsProvider);
+    final screenState = ref.watch(studentsProvider);
     final departments = ref.watch(departmentsProvider);
 
     return Scaffold(
@@ -49,9 +49,9 @@ class StudentsScreen extends ConsumerWidget {
         title: const Text('Students'),
       ),
       body: ListView.builder(
-        itemCount: students.length,
+        itemCount: screenState.students.length,
         itemBuilder: (context, index) {
-          final student = students[index];
+          final student = screenState.students[index];
           final department = departments.firstWhere((d) => d.id == student.department.id);
 
           return Dismissible(
@@ -65,14 +65,14 @@ class StudentsScreen extends ConsumerWidget {
             direction: DismissDirection.startToEnd,
             onDismissed: (_) => _deleteStudent(context, ref, index),
             child: GestureDetector(
-              onTap: () => _editStudent(context, ref, index, student),
+              onTap: () => _editStudent(context, ref, index),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
                 child: StudentsItem(
                   firstName: student.firstName,
                   lastName: student.lastName,
                   grade: student.grade,
-                  colorName: department.color.withOpacity(0.2),
+                  isFemale: student.gender == Gender.female,
                   iconPath: department.icon,
                 ),
               ),
@@ -83,9 +83,7 @@ class StudentsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => showModalBottomSheet(
           context: context,
-          builder: (_) => NewStudent(
-            onSave: (student) => ref.read(studentsProvider.notifier).addStudent(student),
-          ),
+          builder: (_) => const NewStudent(),
         ),
         child: const Icon(Icons.add),
       ),
